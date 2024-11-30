@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./pulse
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./pulse:/app
+    environment:
+      - DEBUG=1
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"  # React utilizza la porta 3000
+    volumes:
+      - ./frontend:/app  # Monta la cartella locale del frontend nel container
+      - /app/node_modules  # Evita conflitti con i moduli Node
+    stdin_open: true
+    tty: true
+    command: ["npm", "start"]  # Avvia il server di sviluppo React
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: mydatabase
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
