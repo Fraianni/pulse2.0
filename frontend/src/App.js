@@ -6,6 +6,8 @@ import { DndProvider } from "react-dnd";
 import { MultiBackend, TouchTransition } from "dnd-multi-backend";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
+import { ApolloProvider } from "@apollo/client";
+import { warehouseClient, mapdesignerClient } from "./ApolloClient";  // Importa i client
 
 // Configurazione backend: Mouse (HTML5) e Touch
 const HTML5toTouch = {
@@ -32,10 +34,16 @@ function App() {
       </header>
 
       <main>
-        {activeTab === "warehouse" && <WarehouseDashboard />}
+        {activeTab === "warehouse" && (
+          <ApolloProvider client={warehouseClient}>  {/* Avvolgi con ApolloProvider per Warehouse */}
+            <WarehouseDashboard />
+          </ApolloProvider>
+        )}
         {activeTab === "map" && (
           <DndProvider backend={MultiBackend} options={HTML5toTouch}>
-            <MapDesigner />
+            <ApolloProvider client={mapdesignerClient}>  {/* Avvolgi con ApolloProvider per MapDesigner */}
+              <MapDesigner />
+            </ApolloProvider>
           </DndProvider>
         )}
       </main>

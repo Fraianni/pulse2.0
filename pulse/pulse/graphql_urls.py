@@ -2,7 +2,6 @@
 from django.urls import path, include
 
 urlpatterns = [
-    
-    path('', include('mapdesigner.urls')),  # URL di mapdesigner
-    path('', include('warehouse.urls')),  # URL di warehouse
+    path('mapdesigner/', include('mapdesigner.urls')),  # Endpoint per mapdesigner
+    path('warehouse/', include('warehouse.urls')),  # Endpoint per warehouse
 ]
