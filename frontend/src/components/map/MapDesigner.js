@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useDrop } from "react-dnd";
-import Toolbar from "./Toolbar";  // Importazione di Toolbar
-import DraggableItem from "./DraggableItem"; // Assicurati che ci sia questo componente
+import Toolbar from "./Toolbar";
+import DraggableItem from "./DraggableItem";
 
 const MapDesigner = () => {
   const [objects, setObjects] = useState([]);
@@ -9,50 +9,44 @@ const MapDesigner = () => {
   const [, dropRef] = useDrop({
     accept: "ITEM",
     drop: (item, monitor) => {
-      const offset = monitor.getClientOffset(); // Recupera la posizione del mouse
-      const containerRect = monitor.getSourceClientOffset(); // Posizione del contenitore
+      const offset = monitor.getClientOffset();
+      if (!offset) return;
 
-      if (offset && containerRect) {
-        // Aggiungi un nuovo oggetto solo se l'oggetto non è già nella mappa
-        const existingObjectIndex = objects.findIndex((obj) => obj.type === item.type);
-        
-        // Se l'oggetto è già presente, sposta quello esistente
-        if (existingObjectIndex !== -1) {
-          const updatedObjects = [...objects];
-          updatedObjects[existingObjectIndex] = {
-            ...updatedObjects[existingObjectIndex],
-            x: offset.x - containerRect.x,
-            y: offset.y - containerRect.y,
-          };
-          setObjects(updatedObjects);
-        } else {
-          // Se non esiste, crea un nuovo oggetto
-          setObjects((prev) => [
-            ...prev,
-            {
-              id: Date.now(),
-              type: item.type,
-              x: offset.x - containerRect.x,
-              y: offset.y - containerRect.y,
-            },
-          ]);
+      const { id, type, isNew } = item;
+
+      if (isNew) {
+        // Aggiungi un nuovo oggetto
+        setObjects((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            type,
+            x: offset.x,
+            y: offset.y,
+          },
+        ]);
+      } else {
+        // Aggiorna la posizione di un oggetto esistente
+        const delta = monitor.getDifferenceFromInitialOffset();
+        if (delta) {
+          setObjects((prevObjects) =>
+            prevObjects.map((obj) =>
+              obj.id === id
+                ? {
+                    ...obj,
+                    x: obj.x + delta.x,
+                    y: obj.y + delta.y,
+                  }
+                : obj
+            )
+          );
         }
       }
     },
   });
 
-  // Funzione per gestire lo spostamento degli oggetti esistenti
-  const moveObject = (id, x, y) => {
-    setObjects((prevObjects) =>
-      prevObjects.map((obj) =>
-        obj.id === id ? { ...obj, x, y } : obj
-      )
-    );
-  };
-
   return (
     <div>
-      {/* Toolbar per la gestione degli oggetti da aggiungere */}
       <Toolbar />
       <div
         ref={dropRef}
@@ -73,7 +67,6 @@ const MapDesigner = () => {
             type={obj.type}
             x={obj.x}
             y={obj.y}
-            moveObject={moveObject}  // Passa la funzione per spostare l'oggetto
           />
         ))}
       </div>

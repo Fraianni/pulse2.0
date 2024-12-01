@@ -30,9 +30,9 @@ services:
   db:
     image: postgres:13
     environment:
-      POSTGRES_DB: mydatabase
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pulse_db
+      POSTGRES_USER: pulse
+      POSTGRES_PASSWORD: Pulse.2024
     volumes:
       - db_data:/var/lib/postgresql/data
 

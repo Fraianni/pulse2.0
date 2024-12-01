@@ -2,17 +2,9 @@ import React from "react";
 import { useDrag } from "react-dnd";
 
 const DraggableItem = ({ id, type, x, y }) => {
-  const [{ isDragging }, dragRef] = useDrag({
+  const [, dragRef] = useDrag({
     type: "ITEM",
-    item: { id, type, x, y },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-    end: (item, monitor) => {
-      if (monitor.didDrop()) {
-        // Non facciamo nulla qui per ora, la posizione viene gestita dal dropRef in MapDesigner
-      }
-    },
+    item: { id, type, isNew: false }, // Specifica che non è un nuovo elemento
   });
 
   return (
@@ -22,11 +14,11 @@ const DraggableItem = ({ id, type, x, y }) => {
         position: "absolute",
         left: x,
         top: y,
-        cursor: isDragging ? "move" : "pointer",
+        cursor: "move",
         backgroundColor: "lightblue",
         padding: "10px",
         borderRadius: "5px",
-        boxShadow: isDragging ? "0 0 10px rgba(0,0,0,0.5)" : "none",
+        boxShadow: "0 0 5px rgba(0,0,0,0.2)",
       }}
     >
       {type}
