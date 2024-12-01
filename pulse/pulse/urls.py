@@ -19,6 +19,6 @@ from django.urls import path,include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('graphql/', include('warehouse.urls')),  # Includi le URL definite nel modulo 'warehouse'
+    path('graphql/', include('pulse.graphql_urls')),  # Includi le URL definite nel modulo 'warehouse'
 
 ]

@@ -2,27 +2,40 @@ import React, { useState, useRef } from "react";
 import { useDrop } from "react-dnd";
 import Toolbar from "./Toolbar";
 import DraggableItem from "./DraggableItem";
+import { useMutation } from "@apollo/client";
+import { gql } from "@apollo/client";
+
+const CREATE_OBJECT = gql`
+  mutation CreateObject($type: String!, $x: Float!, $y: Float!) {
+    createObject(type: $type, x: $x, y: $y) {
+      id
+      type
+      x
+      y
+    }
+  }
+`;
 
 const MapDesigner = () => {
   const [objects, setObjects] = useState([]);
+  const dropRef = useRef(null);
 
-  const dropRef = useRef(null);  // Usa useRef per il contenitore del drop
+  const [createObject] = useMutation(CREATE_OBJECT); // Usa la mutazione
 
   const [, drop] = useDrop({
     accept: "ITEM",
-    drop: (item, monitor) => {
+    drop: async (item, monitor) => {
       const offset = monitor.getClientOffset();
       if (!offset) return;
-
-      console.log("Offset", offset);
+      
       const { id, type, isNew } = item;
-      const containerRect = dropRef.current.getBoundingClientRect();  // Usa il riferimento per ottenere la posizione del contenitore
-
+      const containerRect = dropRef.current.getBoundingClientRect();
+      
       if (isNew) {
         const xnewItem = offset.x - containerRect.left;
         const ynewItem = offset.y - containerRect.top;
         
-        // Aggiungi un nuovo oggetto
+        // Aggiungi un nuovo oggetto nell'interfaccia utente
         setObjects((prev) => [
           ...prev,
           {
@@ -32,6 +45,19 @@ const MapDesigner = () => {
             y: ynewItem,
           },
         ]);
+
+        // Chiamata GraphQL per creare l'oggetto nel database
+        try {
+          await createObject({
+            variables: {
+              type,
+              x: xnewItem,
+              y: ynewItem,
+            },
+          });
+        } catch (error) {
+          console.error("Errore durante la creazione dell'oggetto:", error);
+        }
       } else {
         // Aggiorna la posizione di un oggetto esistente
         const delta = monitor.getDifferenceFromInitialOffset();
@@ -57,8 +83,8 @@ const MapDesigner = () => {
       <Toolbar />
       <div
         ref={(node) => {
-          dropRef.current = node;  // Assegna il riferimento dell'elemento DOM
-          drop(node);  // Passa il nodo a dropRef per il monitoraggio
+          dropRef.current = node;
+          drop(node); // Passa il nodo a dropRef per il monitoraggio
         }}
         style={{
           width: "800px",
