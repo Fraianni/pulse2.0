@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'graphene_django',
     'warehouse',
-    'corsheaders'
+    'corsheaders',
+    'mapdesigner',
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
@@ -98,7 +99,7 @@ DATABASES = {
         'NAME': 'pulse_db',
         'USER': 'pulse',
         'PASSWORD': 'Pulse.2024',
-        'HOST': 'db',
+        'HOST': 'localhost',
         'PORT': '5432',
     }
 }
