@@ -2,7 +2,7 @@ import React from "react";
 import { useDrag } from "react-dnd";
 
 const Toolbar = () => {
-  const tools = ["ObjectTable", "Structure"];
+  const tools = ["table", "structure"];
 
   return (
     <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>

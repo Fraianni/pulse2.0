@@ -9,12 +9,19 @@ class ClubArea(models.Model):
         return self.name
 
 class MapObject(models.Model):
-    label = models.CharField(max_length=50, blank=True, null=True)  # Campo opzionale (può essere vuoto nel database e nei form)
-    x = models.FloatField(null=False, blank=False, default=0)  # Coordinata X, opzionale
-    y = models.FloatField(null=False, blank=False, default=0)  # Coordinata Y, opzionale
-    color = models.CharField(max_length=7, blank=True, null=True, default='#808080')  # Colore grigio (gray) in formato esadecimale
+    # Aggiungi il campo `type` al modello base
+    TYPE_CHOICES = [
+        ('table', 'Table'),
+        ('structure', 'Structure'),
+    ]
+    
+    label = models.CharField(max_length=50, blank=True, null=True)  # Campo opzionale
+    x = models.FloatField(null=False, blank=False, default=0)  # Coordinata X
+    y = models.FloatField(null=False, blank=False, default=0)  # Coordinata Y
+    color = models.CharField(max_length=7, blank=True, null=True, default='#808080')  # Colore in formato esadecimale
     clubArea = models.ForeignKey(ClubArea, on_delete=models.CASCADE, null=True, blank=True)  # Relazione opzionale con ClubArea
-
+    type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='table')  # Aggiungi il campo `type`
+    
     def __str__(self):
         return self.label or ""
 

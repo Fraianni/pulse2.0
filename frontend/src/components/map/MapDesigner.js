@@ -1,60 +1,97 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDrop } from "react-dnd";
 import Toolbar from "./Toolbar";
 import DraggableItem from "./DraggableItem";
-import { useMutation } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { gql } from "@apollo/client";
 
-const CREATE_OBJECT = gql`
-  mutation CreateObject($type: String!, $x: Float!, $y: Float!) {
-    createObject(type: $type, x: $x, y: $y) {
-      id
-      type
-      x
-      y
+const GET_EXISTING_OBJECTS = gql`
+  query {
+    allObjects {
+      ... on ObjectTableType {
+        id
+        x
+        y
+        label
+      }
+      ... on ObjectStructureType {
+        id
+        x
+        y
+        label
+      }
     }
   }
+`;
+
+const CREATE_OBJECT = gql`
+mutation CreateMapObject($type: String!, $x: Float!, $y: Float!) {
+  createMapObject(type: $type, x: $x, y: $y) {
+    mapObject {
+      ... on ObjectTableType {
+        id
+        x
+        y
+      }
+      ... on ObjectStructureType {
+        id
+        x
+        y
+      }
+    }
+  }
+}
 `;
 
 const MapDesigner = () => {
   const [objects, setObjects] = useState([]);
   const dropRef = useRef(null);
 
-  const [createObject] = useMutation(CREATE_OBJECT); // Usa la mutazione
+  const { data: existingObjects, loading, error } = useQuery(GET_EXISTING_OBJECTS); // Usa la query per caricare oggetti esistenti
+console.log("ex",existingObjects);
+  const [createObject] = useMutation(CREATE_OBJECT); // Usa la mutazione per creare oggetti nuovi
+
+  useEffect(() => {
+    // Se ci sono oggetti esistenti, impostali nello stato
+    if (existingObjects && existingObjects.allObjects) {
+        console.log("miao",)
+      setObjects(existingObjects.allObjects);
+    }
+  }, [existingObjects]);
 
   const [, drop] = useDrop({
     accept: "ITEM",
     drop: async (item, monitor) => {
       const offset = monitor.getClientOffset();
       if (!offset) return;
-      
+
       const { id, type, isNew } = item;
       const containerRect = dropRef.current.getBoundingClientRect();
-      
+
       if (isNew) {
-        const xnewItem = offset.x - containerRect.left;
-        const ynewItem = offset.y - containerRect.top;
-        
+        const x = offset.x - containerRect.left;
+        const y = offset.y - containerRect.top;
+
         // Aggiungi un nuovo oggetto nell'interfaccia utente
         setObjects((prev) => [
           ...prev,
           {
-            id: Date.now(),
+            id: Date.now(), // Genera un id temporaneo
             type,
-            x: xnewItem,
-            y: ynewItem,
+            x,
+            y,
           },
         ]);
 
-        // Chiamata GraphQL per creare l'oggetto nel database
         try {
-          await createObject({
+          const response = await createObject({
             variables: {
               type,
-              x: xnewItem,
-              y: ynewItem,
+              x,
+              y,
             },
           });
+          console.log("Oggetto creato:", response.data);
         } catch (error) {
           console.error("Errore durante la creazione dell'oggetto:", error);
         }
@@ -77,6 +114,8 @@ const MapDesigner = () => {
       }
     },
   });
+
+  if (error) return <p>Error loading objects: {error.message}</p>;
 
   return (
     <div>

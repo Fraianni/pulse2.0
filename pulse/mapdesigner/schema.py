@@ -1,58 +1,55 @@
 import graphene
 from graphene_django.types import DjangoObjectType
-from .models import ObjectTable, ObjectStructure, MapObject
+from .models import ObjectTable, ObjectStructure
 
-# Definizione dei tipi GraphQL
 class ObjectTableType(DjangoObjectType):
     class Meta:
         model = ObjectTable
+        fields = "__all__" # Assicurati che i campi necessari siano inclusi
 
 class ObjectStructureType(DjangoObjectType):
     class Meta:
         model = ObjectStructure
+        fields = "__all__"  # Definisci i campi appropriati
 
-# Mutazione per creare un ObjectTable
-class CreateObjectTable(graphene.Mutation):
+class MapObjectUnion(graphene.Union):
+    class Meta:
+        types = (ObjectTableType, ObjectStructureType)
+
+class CreateMapObject(graphene.Mutation):
     class Arguments:
-        label = graphene.String()
-        x = graphene.Float()
-        y = graphene.Float()
-        budget = graphene.Float()
-        customerQuantity = graphene.Int()
+        type = graphene.String(required=True)
+        label = graphene.String(required=False)
+        x = graphene.Float(required=True)
+        y = graphene.Float(required=True)
+        budget = graphene.Float(required=False)
+        customerQuantity = graphene.Int(required=False)
 
-    object_table = graphene.Field(ObjectTableType)
+    map_object = graphene.Field(MapObjectUnion)
 
-    def mutate(self, info, label, x, y, budget=None, customerQuantity=None):
-        object_table = ObjectTable.objects.create(
-            label=label, x=x, y=y, budget=budget, customerQuantity=customerQuantity
-        )
-        return CreateObjectTable(object_table=object_table)
+    def mutate(self, info, type, x, y, label=None, budget=None, customerQuantity=None):
+        if type == "table":
+            obj = ObjectTable.objects.create(
+                label=label, x=x, y=y, budget=budget, customerQuantity=customerQuantity, type=type
+            )
+        elif type == "structure":
+            obj = ObjectStructure.objects.create(
+                label=label, x=x, y=y,type=type
+            )
+        else:
+            raise Exception("Tipo oggetto non valido.")
+        return CreateMapObject(map_object=obj)
 
-# Mutazione per creare un ObjectStructure
-class CreateObjectStructure(graphene.Mutation):
-    class Arguments:
-        label = graphene.String()
-        x = graphene.Float()
-        y = graphene.Float()
+class Mutation(graphene.ObjectType):
+    create_map_object = CreateMapObject.Field()
 
-    object_structure = graphene.Field(ObjectStructureType)
-
-    def mutate(self, info, label, x, y):
-        object_structure = ObjectStructure.objects.create(
-            label=label, x=x, y=y
-        )
-        return CreateObjectStructure(object_structure=object_structure)
-
-# Query di esempio per ottenere i dati
 class Query(graphene.ObjectType):
-    all_objects = graphene.List(ObjectTableType)
+    all_objects = graphene.List(MapObjectUnion)
 
     def resolve_all_objects(self, info):
-        return ObjectTable.objects.all()
-
-# Includere le mutazioni nel tuo schema
-class Mutation(graphene.ObjectType):
-    create_object_table = CreateObjectTable.Field()
-    create_object_structure = CreateObjectStructure.Field()
+        # Restituisce sia ObjectTable che ObjectStructure
+        tables = ObjectTable.objects.all()
+        structures = ObjectStructure.objects.all()
+        return list(tables) + list(structures)
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
