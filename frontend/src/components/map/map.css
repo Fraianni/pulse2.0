@@ -1,0 +1,6 @@
+.selected {
+    background-color: rgba(0, 123, 255, 0.3); /* Aggiungi un background traslucido per evidenziare l'oggetto */
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.6); /* Aggiungi una leggera ombra per evidenziare */
+    border: 2px solid #007bff; /* Puoi anche aggiungere un bordo per evidenziare l'oggetto */
+  }
+  

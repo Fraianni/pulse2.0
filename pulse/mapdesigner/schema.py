@@ -40,8 +40,51 @@ class CreateMapObject(graphene.Mutation):
             raise Exception("Tipo oggetto non valido.")
         return CreateMapObject(map_object=obj)
 
+class UpdateMapObject(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)  # Campo `id` mancante
+        x = graphene.Float(required=False)
+        y = graphene.Float(required=False)
+        label = graphene.String(required=False)
+        color = graphene.String(required=False)
+        budget = graphene.Float(required=False)
+        customer_quantity = graphene.Int(required=False)
+
+    map_object = graphene.Field(MapObjectUnion)
+
+    def mutate(self, info, id, x=None, y=None, label=None, color=None, budget=None, customer_quantity=None):
+        # Trova l'oggetto esistente
+        try:
+            obj = ObjectTable.objects.get(id=id)
+        except ObjectTable.DoesNotExist:
+            try:
+                obj = ObjectStructure.objects.get(id=id)
+            except ObjectStructure.DoesNotExist:
+                raise Exception("Oggetto non trovato.")
+        
+        # Aggiorna le coordinate
+        if x is not None:
+            obj.x = x
+        if y is not None:
+            obj.y = y
+        if label is not None:
+            obj.label = label
+        if color is not None:
+            obj.color = color
+        if isinstance(obj, ObjectTable):
+            if budget is not None:
+                obj.budget = budget
+            if customer_quantity is not None:
+                obj.customer_quantity = customer_quantity
+        
+
+        obj.save()
+
+        return UpdateMapObject(map_object=obj)
+
 class Mutation(graphene.ObjectType):
     create_map_object = CreateMapObject.Field()
+    update_map_object = UpdateMapObject.Field()
 
 class Query(graphene.ObjectType):
     all_objects = graphene.List(MapObjectUnion)
