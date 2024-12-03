@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'warehouse',
     'corsheaders',
     'mapdesigner',
+    'authentication'
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
@@ -60,6 +61,7 @@ ALLOWED_HOSTS = [
     'localhost',
 ]
 MIDDLEWARE = [
+    
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -69,6 +71,15 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+
+"""GPT MI DICE QUESTO! Prova!"""
+# GRAPHENE = {
+#     'MIDDLEWARE': [
+#         'graphql_jwt.middleware.JSONWebTokenMiddleware',  # Questo middleware gestisce la validazione del token
+#     ],
+#     'SCHEMA': 'your_project.schema.schema',  # Imposta il tuo schema
+# }
 
 ROOT_URLCONF = 'pulse.urls'
 

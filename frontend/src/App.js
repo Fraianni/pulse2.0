@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
 import WarehouseDashboard from "./components/warehouse/WarehouseDashboard";
 import MapDesigner from "./components/map/MapDesigner";
@@ -7,46 +7,72 @@ import { MultiBackend, TouchTransition } from "dnd-multi-backend";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
 import { ApolloProvider } from "@apollo/client";
-import { warehouseClient, mapdesignerClient } from "./ApolloClient";  // Importa i client
-
-// Configurazione backend: Mouse (HTML5) e Touch
+import { warehouseClient, mapdesignerClient, authenticationClient } from "./ApolloClient";
+import AuthenticationController from "./AuthenticationController";
+import Navbar from "./components/general/Navbar";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { ToastContainer, toast } from "react-toastify"; // Importa ToastContainer e toast
+import 'react-toastify/dist/ReactToastify.css'; // Importa lo stile dei toast
 const HTML5toTouch = {
   backends: [
     {
-      backend: HTML5Backend, // Supporto per mouse
+      backend: HTML5Backend,
     },
     {
       backend: TouchBackend,
-      preview: true, // Abilita anteprima per oggetti trascinati
-      transition: TouchTransition, // Gestione transizioni per touch
+      preview: true,
+      transition: TouchTransition,
     },
   ],
 };
 
 function App() {
-  const [activeTab, setActiveTab] = useState("warehouse");
+  const [activeTab, setActiveTab] = useState("login");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const token = localStorage.getItem('authToken');
+
+  const handleNavigation = (tab) => {
+    setActiveTab(tab);
+  };
+
+  const dummyTokenAuthentication = () => {
+    if (token){
+      setIsLoggedIn(true);
+    }
+  }
+
+  useEffect(() => {
+    dummyTokenAuthentication();
+  }, []); // L'array vuoto fa sì che venga eseguito solo una volta al montaggio del componente
+
 
   return (
     <div className="App">
-      <header>
-        <button onClick={() => setActiveTab("warehouse")}>Magazzino</button>
-        <button onClick={() => setActiveTab("map")}>Mappa del Locale</button>
-      </header>
+      <ToastContainer/>
+      <Navbar activeTab={activeTab} onTabClick={handleNavigation} />
 
-      <main>
-        {activeTab === "warehouse" && (
-          <ApolloProvider client={warehouseClient}>  {/* Avvolgi con ApolloProvider per Warehouse */}
-            <WarehouseDashboard />
-          </ApolloProvider>
-        )}
-        {activeTab === "map" && (
-          <DndProvider backend={MultiBackend} options={HTML5toTouch}>
-            <ApolloProvider client={mapdesignerClient}>  {/* Avvolgi con ApolloProvider per MapDesigner */}
-              <MapDesigner />
-            </ApolloProvider>
-          </DndProvider>
-        )}
-      </main>
+      {isLoggedIn ? (
+        <>
+          <main>
+            {activeTab === "warehouse" && (
+              <ApolloProvider client={warehouseClient}>
+                <WarehouseDashboard />
+              </ApolloProvider>
+            )}
+            {activeTab === "map" && (
+              <DndProvider backend={MultiBackend} options={HTML5toTouch}>
+                <ApolloProvider client={mapdesignerClient}>
+                  <MapDesigner />
+                </ApolloProvider>
+              </DndProvider>
+            )}
+          </main>
+        </>
+      ) : (
+        <ApolloProvider client={authenticationClient}>
+          <AuthenticationController />
+        </ApolloProvider>
+      )}
     </div>
   );
 }
