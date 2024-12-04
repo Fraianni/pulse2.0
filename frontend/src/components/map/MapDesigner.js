@@ -95,6 +95,8 @@ const MapDesigner = () => {
   const [selectedObject, setSelectedObject] = useState(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false); // Stato per la visibilità del popup
   const [selectedObjects, setSelectedObjects] = useState([]);
+  const [lastClick, setLastClick] = useState(null); // Per memorizzare l'orario dell'ultimo clic
+  const [clickTimeout, setClickTimeout] = useState(null); // Per gestire il timeout tra i clic
 
   useEffect(() => {
     // Se ci sono oggetti esistenti, impostali nello stato
@@ -125,6 +127,7 @@ const MapDesigner = () => {
             type,
             x,
             y,
+            rotation: 0, // Aggiungiamo la rotazione iniziale
           },
         ]);
   
@@ -196,6 +199,9 @@ const MapDesigner = () => {
       console.error("Errore durante l'aggiornamento dell'oggetto:", error);
     }
   };
+
+
+
   const handleSelectObject = (obj) => {
     console.log(obj); // Per verificare che l'oggetto sia selezionato correttamente
     
@@ -205,11 +211,55 @@ const MapDesigner = () => {
         // Se l'oggetto è già selezionato, lo rimuoviamo dalla lista
         return prevSelected.filter((selectedObj) => selectedObj.id !== obj.id);
       } else {
-        // Altrimenti, lo aggiungiamo alla lista
-        return [...prevSelected, obj];
+        // Altrimenti, lo aggiungiamo alla lista e aggiungiamo la classe "vibration"
+        return [...prevSelected, { ...obj, vibration: true }];
       }
     });
   };
+
+  const handleRotateObject = (id) => {
+    setObjects(prevObjects => 
+      prevObjects.map(obj => 
+        obj.id === id ? {
+          ...obj,
+          rotation: obj.rotation + 90 // Ruota di 90 gradi ad ogni click
+        } : obj
+      )
+    );
+  };
+
+
+  //
+  //  IMPLEMENTAZIONE DELLA ROTAZIONE DELL'OGGETTO -> Sul doppio click dell'oggetto avvenuto entro x secondi, l'oggetto verrà ruotato in verticale.
+  //
+
+  const handleDoubleClick = (id) => {
+    const currentTime = Date.now();
+    console.log("ID SELEZXIONATO", id);
+    // Se è passato troppo tempo tra i clic (più di 300 ms), resettare il conteggio
+    if (lastClick && currentTime - lastClick > 5000) {
+      setLastClick(currentTime); // Ritorniamo a iniziare il conteggio dei clic
+      return;
+    }
+
+    if (lastClick && currentTime - lastClick <= 5000) {
+      // Ruota l'oggetto selezionato di 90 gradi
+      
+      setObjects(prevObjects => 
+        prevObjects.map(obj => {
+          console.log('Obj rotation before update:', obj.rotation); // Stampa la rotazione prima dell'aggiornamento
+          return obj.id === id ? { 
+            ...obj, 
+            rotation: (90) % 360 // Ruota di 90 gradi
+          } : obj;
+        })
+      );
+      setLastClick(null); // Resetta il contatore dopo il doppio clic
+    }
+    setLastClick(currentTime); // Aggiorna il momento dell'ultimo clic
+  };
+  
+
   
   useEffect(() => {
     console.log(selectedObjects);
@@ -260,18 +310,21 @@ const MapDesigner = () => {
         }}
       >
         {objects.map((obj) => (
-
+          <div>
           <DraggableItem
             key={obj.id}
             id={obj.id}
-            type={obj.type}
+            type={obj.label || obj.type}
             x={obj.x}
             y={obj.y}
             color={obj.color}  // Passa il colore dal backend
-
+            className={selectedObjects.some(selectedObj => selectedObj.id === obj.id) ? 'vibration' : ''}
             onClick={() => handleSelectObject(obj)} // Modifica la funzione di click
+            rotation={obj.rotation}
+            onDoubleClick={() => handleDoubleClick(obj.id)} // Gestisci il doppio clic
 
           />
+          </div>
         ))}
       </div>
       {selectedObjects.length > 1 && (

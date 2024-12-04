@@ -1,21 +1,25 @@
 import React from "react";
 import { useDrag } from "react-dnd";
+import './DraggableItem.css'
 
-
-const DraggableItem = ({ id, type, x, y, color, onClick }) => {
+const DraggableItem = ({ id, type, x, y, color, onClick, className, rotation, onDoubleClick }) => {
   const [, dragRef] = useDrag({
     type: "ITEM",
     item: { id, type, isNew: false }, // Specifica che non è un nuovo elemento
   });
 
   return (
-    <div
+    <div 
+      className={className}
+      onDoubleClick={onDoubleClick} // Aggiungi l'evento di doppio clic
       ref={dragRef}
       style={{
         position: "absolute",
         left: x,
         top: y,
         cursor: "move",
+        transform: `rotate(${rotation}deg)`, // Aggiungi la rotazione
+        transition: "transform 0.2s ease", // Aggiungi una transizione morbida per la rotazione
         backgroundColor: color || "lightblue", // Usa il colore passato dal backend o lightblue come default
         padding: "10px",
         borderRadius: "5px",
