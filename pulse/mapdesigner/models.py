@@ -1,13 +1,14 @@
 from django.db import models
 
-# Definizione di un modello per il ClubArea (se non esiste già)
-class ClubArea(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField()
+
+class Map(models.Model):
+    name = models.CharField(max_length=100, default="default")
+    description = models.TextField(null=True,blank=True)
+    width = models.FloatField(null=True, blank=True, default=800)  # Larghezza predefinita
+    height = models.FloatField(null=True, blank=True, default=500)  # Altezza predefinita
 
     def __str__(self):
-        return self.name
-
+        return f"Map for {self.name}"
 class MapObject(models.Model):
     # Aggiungi il campo `type` al modello base
     TYPE_CHOICES = [
@@ -19,7 +20,7 @@ class MapObject(models.Model):
     x = models.FloatField(null=False, blank=False, default=0)  # Coordinata X
     y = models.FloatField(null=False, blank=False, default=0)  # Coordinata Y
     color = models.CharField(max_length=7, blank=True, null=True, default='#808080')  # Colore in formato esadecimale
-    clubArea = models.ForeignKey(ClubArea, on_delete=models.CASCADE, null=True, blank=True)  # Relazione opzionale con ClubArea
+    map = models.ForeignKey(Map, on_delete=models.CASCADE, null=True, blank=True)  # Relazione opzionale con ClubArea
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='table')  # Aggiungi il campo `type`
     
     def __str__(self):

@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'warehouse',
     'corsheaders',
     'mapdesigner',
-    'authentication'
+    'authentication',
+    'graphql_jwt',
 ]
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',

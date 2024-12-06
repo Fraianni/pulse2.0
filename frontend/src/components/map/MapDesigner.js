@@ -5,6 +5,7 @@ import DraggableItem from "./DraggableItem";
 import { useMutation, useQuery } from "@apollo/client";
 import { gql } from "@apollo/client";
 import EditPopup from "./EditPopup"; // Importa il tuo popup per la modifica
+import { GET_MAP_DIMENSIONS, UPDATE_MAP_DIMENSIONS } from "../../graphql/graphqlQueries" // Percorso relativo
 
 const GET_EXISTING_OBJECTS = gql`
   query {
@@ -85,6 +86,8 @@ mutation UpdateMapObject(
 }
 `;
 
+
+
 const MapDesigner = () => {
   const [objects, setObjects] = useState([]);
   const dropRef = useRef(null);
@@ -97,7 +100,65 @@ const MapDesigner = () => {
   const [selectedObjects, setSelectedObjects] = useState([]);
   const [lastClick, setLastClick] = useState(null); // Per memorizzare l'orario dell'ultimo clic
   const [clickTimeout, setClickTimeout] = useState(null); // Per gestire il timeout tra i clic
+  const [updateMapDimensions] = useMutation(UPDATE_MAP_DIMENSIONS);
+  const [mapDimensions, setMapDimensions] = useState({ width: 800, height: 500 });
+  const [isEditingDimensions, setIsEditingDimensions] = useState(false);
 
+  const { data: dimensionData, loading: dimensionsLoading } = useQuery(GET_MAP_DIMENSIONS, {
+    variables: { mapId: 1 },  // Passa 'id' qui invece di 'clubAreaId'
+    onCompleted: (data) => {
+      console.log('Query completed with data:', data);
+    },
+    onError: (error) => {
+      console.error('Query error:', error);
+    },
+  });
+  useEffect(() => {
+    console.log("sono nel ujseffect");
+    if (dimensionData && dimensionData.map) {  // Usa `dimensionData.map` anziché `dimensionData.mapDimensions`
+      setMapDimensions(dimensionData.map);  // Assegna direttamente `dimensionData.map` a `setMapDimensions`
+
+    }
+  }, [dimensionData]);
+  
+  // Salvare le nuove dimensioni nel backend
+  const handleDimensionSave = async () => {
+    try {
+      await updateMapDimensions({
+        variables: {
+          mapId: 1,  // Passa 'id' qui invece di 'clubAreaId'
+          width: mapDimensions.width,
+          height: mapDimensions.height,
+        },
+      });
+      setIsEditingDimensions(false); // Chiudi il modulo di modifica
+    } catch (error) {
+      console.error("Errore durante l'aggiornamento delle dimensioni:", error);
+    }
+  };
+
+  // UI per modificare le dimensioni della mappa
+  const renderDimensionEditor = () => (
+    <div style={{ marginBottom: "10px" }}>
+      <label>
+        Larghezza:
+        <input
+          type="number"
+          value={mapDimensions.width}
+          onChange={(e) => setMapDimensions((prev) => ({ ...prev, width: +e.target.value }))}
+        />
+      </label>
+      <label style={{ marginLeft: "10px" }}>
+        Altezza:
+        <input
+          type="number"
+          value={mapDimensions.height}
+          onChange={(e) => setMapDimensions((prev) => ({ ...prev, height: +e.target.value }))}
+        />
+      </label>
+      <button onClick={handleDimensionSave}>Salva</button>
+    </div>
+  );
   useEffect(() => {
     // Se ci sono oggetti esistenti, impostali nello stato
     if (existingObjects && existingObjects.allObjects) {
@@ -294,14 +355,19 @@ const MapDesigner = () => {
   return (
     <div>
       <Toolbar />
+      {isEditingDimensions ? (
+        renderDimensionEditor()
+      ) : (
+        <button onClick={() => setIsEditingDimensions(true)}>Modifica Dimensioni</button>
+      )}
       <div
         ref={(node) => {
           dropRef.current = node;
           drop(node); // Passa il nodo a dropRef per il monitoraggio
         }}
         style={{
-          width: "800px",
-          height: "500px",
+          width: `${mapDimensions.width}px`,
+          height: `${mapDimensions.height}px`,
           border: "2px solid #ccc",
           borderRadius: "8px",
           position: "relative",
@@ -310,21 +376,20 @@ const MapDesigner = () => {
         }}
       >
         {objects.map((obj) => (
-          <div>
           <DraggableItem
             key={obj.id}
             id={obj.id}
             type={obj.label || obj.type}
             x={obj.x}
             y={obj.y}
-            color={obj.color}  // Passa il colore dal backend
-            className={selectedObjects.some(selectedObj => selectedObj.id === obj.id) ? 'vibration' : ''}
-            onClick={() => handleSelectObject(obj)} // Modifica la funzione di click
+            color={obj.color}
+            className={
+              selectedObjects.some((selectedObj) => selectedObj.id === obj.id) ? "vibration" : ""
+            }
+            onClick={() => handleSelectObject(obj)}
             rotation={obj.rotation}
-            onDoubleClick={() => handleDoubleClick(obj.id)} // Gestisci il doppio clic
-
+            onDoubleClick={() => handleDoubleClick(obj.id)}
           />
-          </div>
         ))}
       </div>
       {selectedObjects.length > 1 && (
