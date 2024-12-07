@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FaRedo, FaUndo } from 'react-icons/fa';
-
+import { Button } from '@mui/material';
 
 const EditPopup = ({ object, onSave, onClose, RotateClockwise, RotateCounterClockwise }) => {
   const [label, setLabel] = useState(object.label || "");
@@ -9,7 +9,6 @@ const EditPopup = ({ object, onSave, onClose, RotateClockwise, RotateCounterCloc
   const [customerQuantity, setCustomerQuantity] = useState(object.customerQuantity || 0);
 
   const isTable = object.type === "TABLE";
-console.log(object);
   const handleSave = () => {
     onSave({
       id: object.id,
@@ -17,6 +16,7 @@ console.log(object);
       color,
       ...(isTable && { budget, customerQuantity }),
     });
+    
     onClose();
   };
 
@@ -57,8 +57,8 @@ console.log(object);
           </label>
         </>
       )}
-      <button onClick={handleSave}>Save</button>
-      <button onClick={onClose}>Cancel</button>
+      <Button onClick={handleSave}>Save</Button>
+      <Button onClick={onClose}>Cancel</Button>
     </div>
   );
 };

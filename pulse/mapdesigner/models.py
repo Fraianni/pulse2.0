@@ -24,6 +24,9 @@ class MapObject(models.Model):
     map = models.ForeignKey(Map, on_delete=models.CASCADE, null=True, blank=True)  # Relazione opzionale con ClubArea
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='table')  # Aggiungi il campo `type`
     rotation = models.IntegerField(null=False, blank=False, default=0)  # Coordinata X
+    width = models.FloatField(null=True, blank=True, default=100)  # Larghezza predefinita
+    height = models.FloatField(null=True, blank=True, default=50)  # Altezza predefinita
+
     def __str__(self):
         return self.label or ""
 

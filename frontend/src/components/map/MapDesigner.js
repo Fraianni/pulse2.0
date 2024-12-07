@@ -51,9 +51,12 @@ mutation CreateMapObject($type: String!, $x: Float!, $y: Float!) {
 }
 `;
 // ! significa campo obbligatorio
+// UpdateMapObject Quello che dichiari qui sono i nomi delle variabili che si aspetta di ricevere quando chiamo la funzione da frontend -> id : obj.id
+// updateMapObject I valori che stanno come chiave sono i valori del backend, quelli a destra sono le variabili che riceve sopra!
+// mapObject è l'oggetto che restituisce dopo aver fatto la chiamata al backend, 
 const UPDATE_OBJECT = gql`
 mutation UpdateMapObject(
-  $id: ID!
+  $id: ID!    
   $label: String,
   $color: String,
   $budget: Float,
@@ -61,6 +64,8 @@ mutation UpdateMapObject(
   $x: Float,
   $y: Float,
   $rotation : Int
+  $width: Float,
+  $height: Float,
 ) {
   updateMapObject(
     id: $id
@@ -71,12 +76,18 @@ mutation UpdateMapObject(
     x: $x,
     y: $y,
     rotation: $rotation
+    width: $width,
+    height: $height,
   ) {
     mapObject {
       ... on ObjectTableType {
         id
         label
         color
+        x
+        y
+        width
+        height
         budget
         customerQuantity
         rotation
@@ -85,12 +96,17 @@ mutation UpdateMapObject(
         id
         label
         color
+        x
+        y
+        width
+        height
         rotation
       }
     }
   }
 }
 `;
+// Il risultato finale è questo, dopo la chiamta al backend puoi riprendere i dati (esempio) facendo così -> const updatedRotation = response.data.updateMapObject.mapObject.rotation;
 
 
 
@@ -258,10 +274,10 @@ const MapDesigner = () => {
     try {
       const response = await updateObject({
         variables: updatedData,
-      });
-      console.log("Oggetto aggiornato:", response.data);
+        });
+        console.log("Oggetto aggiornato:", response.data);
       setObjects((prev) =>
-        prev.map((obj) => (obj.id === updatedData.id ? { ...obj, ...updatedData } : obj))
+        prev.map((obj) => (obj.id === updatedData.id ? { ...obj, ...response.data } : obj))
       );
     } catch (error) {
       console.error("Errore durante l'aggiornamento dell'oggetto:", error);
@@ -325,64 +341,6 @@ const MapDesigner = () => {
   };
 
   
-
-  const handleRotation = async (id) => {
-    const currentTime = Date.now();
-    console.log("ID SELEZXIONATO", id);
-
-      const rotation = 30; 
-      try {
-        const response = await updateObject({
-          variables: {
-            id, // Passi l'id dell'oggetto da aggiornare
-            rotation, // Passi la nuova rotazione
-            // Aggiungi qui altri campi se necessario, come label, color, ecc.
-          }
-        });
-        console.log("datarotazione", response.data);
-      }
-      catch(error){
-        console.log("Errore nella rotazione", error);
-      }
-      setObjects(prevObjects => 
-        prevObjects.map(obj => {
-          console.log('Obj before update:', obj); // Stampa la rotazione prima dell'aggiornamento
-          return obj.id === id ? { 
-            ...obj, 
-            rotation: (obj.rotation + 30) % 360 
-          } : obj;
-        }
-      )
-      );
-  };
-
-  // const handleDoubleClick = (id) => {
-  //   const currentTime = Date.now();
-  //   console.log("ID SELEZXIONATO", id);
-  //   // Se è passato troppo tempo tra i clic (più di 300 ms), resettare il conteggio
-  //   if (lastClick && currentTime - lastClick > 5000) {
-  //     setLastClick(currentTime); // Ritorniamo a iniziare il conteggio dei clic
-  //     return;
-  //   }
-
-  //   if (lastClick && currentTime - lastClick <= 5000) {
-  //     // Ruota l'oggetto selezionato di 90 gradi
-      
-  //     setObjects(prevObjects => 
-  //       prevObjects.map(obj => {
-  //         console.log('Obj rotation before update:', obj.rotation); // Stampa la rotazione prima dell'aggiornamento
-  //         return obj.id === id ? { 
-  //           ...obj, 
-  //           rotation: (obj.rotation + 30) % 360 // Ruota di 90 gradi
-  //         } : obj;
-  //       })
-  //     );
-  //     setLastClick(null); // Resetta il contatore dopo il doppio clic
-  //   }
-  //   setLastClick(currentTime); // Aggiorna il momento dell'ultimo clic
-  // };
-  
-
   
   useEffect(() => {
     console.log(selectedObjects);
@@ -399,12 +357,14 @@ const MapDesigner = () => {
     // Cambia il colore di tutti gli oggetti selezionati
     selectedObjects.forEach(async (obj) => {
       try {
-        await updateObject({
+        const response = await updateObject({
           variables: { id: obj.id, color },
         });
+        const updatedX  = response.data.updateMapObject.mapObject.x;
+        const updatedY  = response.data.updateMapObject.mapObject.y;
         setObjects((prevObjects) =>
           prevObjects.map((o) =>
-            o.id === obj.id ? { ...o, color } : o
+            o.id === obj.id ? { ...o, x:updatedX, y:updatedY, color: color } : o
           )
         );
       } catch (error) {
@@ -420,14 +380,15 @@ const MapDesigner = () => {
     <div>
       <Toolbar />
       {(selectedObjects.length === 1 && selectedObject) ? (
-      <EditPopup
-        object={selectedObject}
-        onSave={handleSave}
-        onClose={() => setSelectedObject(null)}
-        RotateClockwise={RotateClockwise}
-        RotateCounterClockwise={RotateCounterClockwise}
-      />
-    ) : <div>Mappa del locale</div>}
+        <EditPopup
+          object={selectedObject}
+          onSave={handleSave}
+          onClose={() => setSelectedObject(null)}
+          RotateClockwise={RotateClockwise}
+          RotateCounterClockwise={RotateCounterClockwise}
+        />
+      ) : <div>Mappa del locale</div>
+    }
     {selectedObjects.length > 1 && (
       <div>
         <label>Scegli un colore:</label>
@@ -466,6 +427,9 @@ const MapDesigner = () => {
             }
             onClick={() => handleSelectObject(obj)}
             rotation={obj.rotation}
+            updateObject={updateObject}
+            width={obj.width}
+            height={obj.height}
             // onDoubleClick={() => handleRotation(obj.id)}
           />
         ))}
