@@ -9,6 +9,7 @@ class Map(models.Model):
 
     def __str__(self):
         return f"Map for {self.name}"
+    
 class MapObject(models.Model):
     # Aggiungi il campo `type` al modello base
     TYPE_CHOICES = [
@@ -22,7 +23,7 @@ class MapObject(models.Model):
     color = models.CharField(max_length=7, blank=True, null=True, default='#808080')  # Colore in formato esadecimale
     map = models.ForeignKey(Map, on_delete=models.CASCADE, null=True, blank=True)  # Relazione opzionale con ClubArea
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default='table')  # Aggiungi il campo `type`
-    
+    rotation = models.IntegerField(null=False, blank=False, default=0)  # Coordinata X
     def __str__(self):
         return self.label or ""
 

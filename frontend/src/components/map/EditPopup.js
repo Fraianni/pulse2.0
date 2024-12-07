@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { FaRedo, FaUndo } from 'react-icons/fa';
 
-const EditPopup = ({ object, onSave, onClose }) => {
+
+const EditPopup = ({ object, onSave, onClose, RotateClockwise, RotateCounterClockwise }) => {
   const [label, setLabel] = useState(object.label || "");
   const [color, setColor] = useState(object.color || "#808080");
   const [budget, setBudget] = useState(object.budget || 0);
@@ -19,8 +21,14 @@ console.log(object);
   };
 
   return (
-    <div className="popup">
+    <div className="d-flex flex-row align-items-center">
       <h3>Edit {isTable ? "Table" : "Structure"}</h3>
+      <label className="mx-2">
+        <FaRedo onClick={RotateClockwise} />      
+      </label>
+      <label className="mx-2">
+        <FaUndo onClick={RotateCounterClockwise} />
+      </label>
       <label>
         Label:
         <input value={label} onChange={(e) => setLabel(e.target.value)} />

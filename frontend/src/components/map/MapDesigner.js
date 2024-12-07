@@ -17,6 +17,7 @@ const GET_EXISTING_OBJECTS = gql`
         y
         label
         color
+        rotation
       }
       ... on ObjectStructureType {
       type
@@ -25,6 +26,7 @@ const GET_EXISTING_OBJECTS = gql`
         y
         label
         color
+        rotation
       }
     }
   }
@@ -48,7 +50,7 @@ mutation CreateMapObject($type: String!, $x: Float!, $y: Float!) {
   }
 }
 `;
-
+// ! significa campo obbligatorio
 const UPDATE_OBJECT = gql`
 mutation UpdateMapObject(
   $id: ID!
@@ -57,7 +59,8 @@ mutation UpdateMapObject(
   $budget: Float,
   $customerQuantity: Int,
   $x: Float,
-  $y: Float
+  $y: Float,
+  $rotation : Int
 ) {
   updateMapObject(
     id: $id
@@ -66,7 +69,8 @@ mutation UpdateMapObject(
     budget: $budget
     customerQuantity: $customerQuantity,
     x: $x,
-    y: $y
+    y: $y,
+    rotation: $rotation
   ) {
     mapObject {
       ... on ObjectTableType {
@@ -75,11 +79,13 @@ mutation UpdateMapObject(
         color
         budget
         customerQuantity
+        rotation
       }
       ... on ObjectStructureType {
         id
         label
         color
+        rotation
       }
     }
   }
@@ -103,7 +109,8 @@ const MapDesigner = () => {
   const [updateMapDimensions] = useMutation(UPDATE_MAP_DIMENSIONS);
   const [mapDimensions, setMapDimensions] = useState({ width: 800, height: 500 });
   const [isEditingDimensions, setIsEditingDimensions] = useState(false);
-
+  const ClockwiseRotationValue = 30;
+  const CounterClockwiseRotationValue = -30;
   const { data: dimensionData, loading: dimensionsLoading } = useQuery(GET_MAP_DIMENSIONS, {
     variables: { mapId: 1 },  // Passa 'id' qui invece di 'clubAreaId'
     onCompleted: (data) => {
@@ -221,7 +228,7 @@ const MapDesigner = () => {
   
           // Aggiorna l'oggetto nel backend
           const updatedObject = updatedObjects.find((obj) => obj.id === id);
-          console.log(updatedObject);
+          console.log("updateObject",updatedObject);
           if (updatedObject) {
             try {
                 console.log("Updating object with variables:", {
@@ -273,52 +280,107 @@ const MapDesigner = () => {
         return prevSelected.filter((selectedObj) => selectedObj.id !== obj.id);
       } else {
         // Altrimenti, lo aggiungiamo alla lista e aggiungiamo la classe "vibration"
-        return [...prevSelected, { ...obj, vibration: true }];
+        return [...prevSelected, { ...obj, selected: true }];
       }
     });
   };
 
-  const handleRotateObject = (id) => {
-    setObjects(prevObjects => 
-      prevObjects.map(obj => 
-        obj.id === id ? {
-          ...obj,
-          rotation: obj.rotation + 90 // Ruota di 90 gradi ad ogni click
-        } : obj
-      )
-    );
+  const RotateClockwise = async () => {
+    selectedObjects.forEach(async (obj) => {
+      try {
+        const response = await updateObject({
+          variables: { id: obj.id, rotation: ClockwiseRotationValue },
+        });
+        const updatedRotation = response.data.updateMapObject.mapObject.rotation;
+        
+        setObjects((prevObjects) =>
+          prevObjects.map((o) =>
+            o.id === obj.id ? { ...o, rotation: updatedRotation } : o
+          )
+        );
+      } catch (error) {
+        console.error("Errore durante l'aggiornamento del colore:", error);
+      }
+    });
   };
 
+  // Funzione per la rotazione antioraria
+  const RotateCounterClockwise = async () => {
+    selectedObjects.forEach(async (obj) => {
+      try {
+        const response = await updateObject({
+          variables: { id: obj.id, rotation: CounterClockwiseRotationValue },
+        });
+        const updatedRotation = response.data.updateMapObject.mapObject.rotation;
+        
+        setObjects((prevObjects) =>
+          prevObjects.map((o) =>
+            o.id === obj.id ? { ...o, rotation: updatedRotation } : o
+          )
+        );
+      } catch (error) {
+        console.error("Errore durante l'aggiornamento del colore:", error);
+      }
+    });
+  };
 
-  //
-  //  IMPLEMENTAZIONE DELLA ROTAZIONE DELL'OGGETTO -> Sul doppio click dell'oggetto avvenuto entro x secondi, l'oggetto verrà ruotato in verticale.
-  //
+  
 
-  const handleDoubleClick = (id) => {
+  const handleRotation = async (id) => {
     const currentTime = Date.now();
     console.log("ID SELEZXIONATO", id);
-    // Se è passato troppo tempo tra i clic (più di 300 ms), resettare il conteggio
-    if (lastClick && currentTime - lastClick > 5000) {
-      setLastClick(currentTime); // Ritorniamo a iniziare il conteggio dei clic
-      return;
-    }
 
-    if (lastClick && currentTime - lastClick <= 5000) {
-      // Ruota l'oggetto selezionato di 90 gradi
-      
+      const rotation = 30; 
+      try {
+        const response = await updateObject({
+          variables: {
+            id, // Passi l'id dell'oggetto da aggiornare
+            rotation, // Passi la nuova rotazione
+            // Aggiungi qui altri campi se necessario, come label, color, ecc.
+          }
+        });
+        console.log("datarotazione", response.data);
+      }
+      catch(error){
+        console.log("Errore nella rotazione", error);
+      }
       setObjects(prevObjects => 
         prevObjects.map(obj => {
-          console.log('Obj rotation before update:', obj.rotation); // Stampa la rotazione prima dell'aggiornamento
+          console.log('Obj before update:', obj); // Stampa la rotazione prima dell'aggiornamento
           return obj.id === id ? { 
             ...obj, 
-            rotation: (90) % 360 // Ruota di 90 gradi
+            rotation: (obj.rotation + 30) % 360 
           } : obj;
-        })
+        }
+      )
       );
-      setLastClick(null); // Resetta il contatore dopo il doppio clic
-    }
-    setLastClick(currentTime); // Aggiorna il momento dell'ultimo clic
   };
+
+  // const handleDoubleClick = (id) => {
+  //   const currentTime = Date.now();
+  //   console.log("ID SELEZXIONATO", id);
+  //   // Se è passato troppo tempo tra i clic (più di 300 ms), resettare il conteggio
+  //   if (lastClick && currentTime - lastClick > 5000) {
+  //     setLastClick(currentTime); // Ritorniamo a iniziare il conteggio dei clic
+  //     return;
+  //   }
+
+  //   if (lastClick && currentTime - lastClick <= 5000) {
+  //     // Ruota l'oggetto selezionato di 90 gradi
+      
+  //     setObjects(prevObjects => 
+  //       prevObjects.map(obj => {
+  //         console.log('Obj rotation before update:', obj.rotation); // Stampa la rotazione prima dell'aggiornamento
+  //         return obj.id === id ? { 
+  //           ...obj, 
+  //           rotation: (obj.rotation + 30) % 360 // Ruota di 90 gradi
+  //         } : obj;
+  //       })
+  //     );
+  //     setLastClick(null); // Resetta il contatore dopo il doppio clic
+  //   }
+  //   setLastClick(currentTime); // Aggiorna il momento dell'ultimo clic
+  // };
   
 
   
@@ -331,6 +393,8 @@ const MapDesigner = () => {
       setSelectedObject(null); // Se ci sono più oggetti selezionati, non apriamo il popup
     }
   }, [selectedObjects]); // Questo effetto si attiva ogni volta che selectedObjects cambia
+
+
   const handleColorChange = (color) => {
     // Cambia il colore di tutti gli oggetti selezionati
     selectedObjects.forEach(async (obj) => {
@@ -355,11 +419,24 @@ const MapDesigner = () => {
   return (
     <div>
       <Toolbar />
-      {isEditingDimensions ? (
-        renderDimensionEditor()
-      ) : (
-        <button onClick={() => setIsEditingDimensions(true)}>Modifica Dimensioni</button>
-      )}
+      {(selectedObjects.length === 1 && selectedObject) ? (
+      <EditPopup
+        object={selectedObject}
+        onSave={handleSave}
+        onClose={() => setSelectedObject(null)}
+        RotateClockwise={RotateClockwise}
+        RotateCounterClockwise={RotateCounterClockwise}
+      />
+    ) : <div>Mappa del locale</div>}
+    {selectedObjects.length > 1 && (
+      <div>
+        <label>Scegli un colore:</label>
+        <input
+          type="color"
+          onChange={(e) => handleColorChange(e.target.value)}
+        />
+      </div>
+    )}
       <div
         ref={(node) => {
           dropRef.current = node;
@@ -379,37 +456,27 @@ const MapDesigner = () => {
           <DraggableItem
             key={obj.id}
             id={obj.id}
+            typeTag={obj.type}
             type={obj.label || obj.type}
             x={obj.x}
             y={obj.y}
             color={obj.color}
             className={
-              selectedObjects.some((selectedObj) => selectedObj.id === obj.id) ? "vibration" : ""
+               selectedObjects.some((selectedObj) => selectedObj.id === obj.id) ? "border border-3 border-dark" : ""
             }
             onClick={() => handleSelectObject(obj)}
             rotation={obj.rotation}
-            onDoubleClick={() => handleDoubleClick(obj.id)}
+            // onDoubleClick={() => handleRotation(obj.id)}
           />
         ))}
       </div>
-      {selectedObjects.length > 1 && (
-      <div>
-        <label>Scegli un colore:</label>
-        <input
-          type="color"
-          onChange={(e) => handleColorChange(e.target.value)}
-        />
-      </div>
-    )}
 
     {/* Popup per un singolo oggetto */}
-    {selectedObjects.length === 1 && selectedObject && (
-      <EditPopup
-        object={selectedObject}
-        onSave={handleSave}
-        onClose={() => setSelectedObject(null)}
-      />
-    )}
+    {isEditingDimensions ? (
+        renderDimensionEditor()
+      ) : (
+        <button onClick={() => setIsEditingDimensions(true)}>Modifica Dimensioni</button>
+      )}
     </div>
   );
 };

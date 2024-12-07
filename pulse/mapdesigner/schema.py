@@ -111,10 +111,11 @@ class UpdateMapObject(graphene.Mutation):
         color = graphene.String(required=False)
         budget = graphene.Float(required=False)
         customer_quantity = graphene.Int(required=False)
+        rotation = graphene.Int(required=False)
 
     map_object = graphene.Field(MapObjectUnion)
 
-    def mutate(self, info, id, x=None, y=None, label=None, color=None, budget=None, customer_quantity=None):
+    def mutate(self, info, id, x=None, y=None, label=None, color=None, budget=None, customer_quantity=None, rotation=None):
         """Update the existing map object based on the provided fields."""
         try:
             obj = ObjectTable.objects.get(id=id)
@@ -133,6 +134,12 @@ class UpdateMapObject(graphene.Mutation):
             obj.label = label
         if color is not None:
             obj.color = color
+        if rotation is not None:
+            obj.rotation += rotation
+            if obj.rotation == 180 or obj.rotation == -180:
+                obj.rotation = 0
+
+
         if isinstance(obj, ObjectTable):
             if budget is not None:
                 obj.budget = budget
